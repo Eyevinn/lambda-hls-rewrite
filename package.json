@@ -1,0 +1,24 @@
+{
+  "name": "lambda-hls-rewrite",
+  "version": "0.1.0",
+  "description": "Lambda function for rewriting HLS manifests",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc --project ./",
+    "dev": "tsc-watch --noClear -p ./tsconfig.json --onSuccess \"node ./dev.server.js\""
+  },
+  "author": "Eyevinn Technology AB <work@eyevinn.se>",
+  "license": "MIT",
+  "dependencies": {
+    "@eyevinn/hls-query": "^0.4.0",
+    "@types/aws-lambda": "^8.10.100",
+    "@types/node": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^28.1.2",
+    "fastify": "^4.0.3",
+    "ts-jest": "^28.0.5",
+    "tsc-watch": "^5.0.3",
+    "typescript": "^4.7.4"
+  }
+}
