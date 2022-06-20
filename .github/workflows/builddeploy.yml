@@ -1,0 +1,39 @@
+name: Deploy to Lambda
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy_source:
+    name: Build and Deploy Lambda
+    strategy:
+      matrix:
+        node-version: [14.x]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: npm install, test and build
+        run: |
+          npm ci --only=prod
+          npm run build --if-present
+        env:
+          CI: true
+      - name: Move node_modules to build folder
+        run: mv node_modules dist/node_modules
+      - name: install zip
+        uses: montudor/action-zip@v0.1.0
+      - name: zip
+        run: zip -qq -r ../bundle.zip ./
+        working-directory: ./dist
+      - name: Default deploy
+        uses: appleboy/lambda-action@master
+        with:
+          aws_access_key_id: ${{ secrets.LAMBDA_AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.LAMBDA_AWS_SECRET_ACCESS_KEY }}
+          aws_region: eu-north-1
+          function_name: lambda-hls-rewrite-dev
+          zip_file: bundle.zip
