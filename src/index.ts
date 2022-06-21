@@ -30,6 +30,8 @@ export const handler: ALBHandler = async (event: ALBEvent): Promise<ALBResult> =
       response = await handleMultiVariantRequest(event);
     } else if (event.path.match(/.m3u8$/) && event.httpMethod === "GET") {
       response = await handleMediaPlaylistRequest(event);
+    } else if (event.path.match(/.ts$/) && event.httpMethod === "GET") {
+      response = await handleSegmentRedirect(event);
     } else if (event.httpMethod === "OPTIONS") {
       response = await handleOptionsRequest(event);
     } else {
@@ -84,8 +86,10 @@ const handleMediaPlaylistRequest = async (event: ALBEvent): Promise<ALBResult> =
   const mediaPlaylistSource = new HLSMediaPlaylist({
     url: new URL(mediaPlaylistUrl) 
   }, (uri) => {
-    return new URLSearchParams();  
-  }, new URL(event.queryStringParameters.originPath));
+    const searchParams = new URLSearchParams(event.queryStringParameters);
+    searchParams.set("seg", uri);
+    return searchParams;
+  });
 
   try {
     await mediaPlaylistSource.fetch();
@@ -109,6 +113,16 @@ const handleMediaPlaylistRequest = async (event: ALBEvent): Promise<ALBResult> =
   } catch (error) {
     throw new Error(error + ": " + mediaPlaylistUrl);
   }
+}
+
+const handleSegmentRedirect = async (event: ALBEvent): Promise<ALBResult> => {
+  const segmentUrl = event.queryStringParameters.originPath + event.queryStringParameters.seg;
+  return {
+    statusCode: 301,
+    headers: {
+      Location: segmentUrl,
+    }
+  }  
 }
 
 const handleOptionsRequest = async (event: ALBEvent): Promise<ALBResult> => {
