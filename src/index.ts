@@ -1,5 +1,6 @@
 import { ALBHandler, ALBEvent, ALBResult } from "aws-lambda";
 import { HLSMultiVariant, HLSMediaPlaylist } from "@eyevinn/hls-query";
+import { gzip } from "zlib";
 
 const generateErrorResponse = ({ code: code, message: message }): ALBResult => {
   let response: ALBResult = {
@@ -23,6 +24,8 @@ export const handler: ALBHandler = async (event: ALBEvent): Promise<ALBResult> =
   for (let k of searchParams.keys()) {
     event.queryStringParameters[k] = searchParams.get(k);
   }
+
+  console.log(event);
 
   let response;
   try {
@@ -52,7 +55,7 @@ const handleMultiVariantRequest = async (event: ALBEvent): Promise<ALBResult> =>
     url: new URL(event.queryStringParameters.url) 
   }, (uri) => {
     const searchParams = new URLSearchParams(event.queryStringParameters);
-    searchParams.set("originPath", originPath + "/" );
+    searchParams.set("originPath", originPath);
     return searchParams;
   });
 
@@ -101,22 +104,34 @@ const handleMediaPlaylistRequest = async (event: ALBEvent): Promise<ALBResult> =
       }
     }
 
+    const compressed = await compress(Buffer.from(content, "utf-8"));
     return {
       statusCode: 200,
       headers: {
         "Content-Type": "application/x-mpegURL",
+        "Content-Encoding": "gzip",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Content-Type, Origin",
       },
-      body: content
+      body: compressed.toString("base64"),
+      isBase64Encoded: true,
     };
   } catch (error) {
     throw new Error(error + ": " + mediaPlaylistUrl);
   }
 }
 
+const compress = async (input: Buffer): Promise<Buffer> => {
+  return new Promise((resolve, reject) => gzip(input, (err, data) => {
+    if (err) {
+      reject(err);
+    }
+    resolve(data);
+  }));
+}
+
 const handleSegmentRedirect = async (event: ALBEvent): Promise<ALBResult> => {
-  const segmentUrl = event.queryStringParameters.originPath + event.queryStringParameters.seg;
+  const segmentUrl = event.queryStringParameters.originPath + "/" + event.queryStringParameters.seg;
   return {
     statusCode: 301,
     headers: {
