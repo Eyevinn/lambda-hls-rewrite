@@ -55,7 +55,8 @@ const handleMultiVariantRequest = async (event: ALBEvent): Promise<ALBResult> =>
     url: new URL(event.queryStringParameters.url) 
   }, (uri) => {
     const searchParams = new URLSearchParams(event.queryStringParameters);
-    searchParams.set("originPath", originPath);
+    searchParams.set("o", originPath);
+    searchParams.delete("url");
     return searchParams;
   });
 
@@ -84,7 +85,7 @@ const handleMultiVariantRequest = async (event: ALBEvent): Promise<ALBResult> =>
 }
 
 const handleMediaPlaylistRequest = async (event: ALBEvent): Promise<ALBResult> => {
-  const mediaPlaylistUrl = event.queryStringParameters.originPath + event.path;
+  const mediaPlaylistUrl = event.queryStringParameters.o + event.path;
 
   const mediaPlaylistSource = new HLSMediaPlaylist({
     url: new URL(mediaPlaylistUrl) 
@@ -92,7 +93,7 @@ const handleMediaPlaylistRequest = async (event: ALBEvent): Promise<ALBResult> =
     const searchParams = new URLSearchParams(event.queryStringParameters);
     searchParams.set("seg", uri);
     return searchParams;
-  });
+  }, undefined, event.queryStringParameters.r ? event.queryStringParameters.r.split(",") : undefined);
 
   try {
     await mediaPlaylistSource.fetch();
@@ -131,7 +132,7 @@ const compress = async (input: Buffer): Promise<Buffer> => {
 }
 
 const handleSegmentRedirect = async (event: ALBEvent): Promise<ALBResult> => {
-  const segmentUrl = event.queryStringParameters.originPath + "/" + event.queryStringParameters.seg;
+  const segmentUrl = event.queryStringParameters.o + "/" + event.queryStringParameters.seg;
   return {
     statusCode: 301,
     headers: {
