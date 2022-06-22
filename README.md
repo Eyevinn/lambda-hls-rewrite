@@ -9,6 +9,7 @@ Lambda function that proxies and rewrite HLS manifest content.
 | Param | Description | Example |
 | ----- | ----------- | ------- |
 | `forceVersion`| Force a specific HLS version | `/master.m3u8?url=<source>&forceVersion=3` |
+| `r` | List of query params to remove from segment url:s | `/master.m3u8?url=<source>&forceVersion=3&r=p,s`| 
 
 ## Development
 
