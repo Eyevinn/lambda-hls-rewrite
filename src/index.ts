@@ -96,7 +96,9 @@ const handleMediaPlaylistRequest = async (event: ALBEvent): Promise<ALBResult> =
     const searchParams = new URLSearchParams(event.queryStringParameters);
     searchParams.set("seg", uri);
     return searchParams;
-  }, undefined, event.queryStringParameters.r ? event.queryStringParameters.r.split(",") : undefined);
+  }, undefined, 
+    event.queryStringParameters.r ? event.queryStringParameters.r.split(",") : undefined,
+    event.queryStringParameters.c);
 
   try {
     await mediaPlaylistSource.fetch();
