@@ -10,7 +10,7 @@
   "author": "Eyevinn Technology AB <work@eyevinn.se>",
   "license": "MIT",
   "dependencies": {
-    "@eyevinn/hls-query": "^0.5.0",
+    "@eyevinn/hls-query": "^0.6.0",
     "@types/aws-lambda": "^8.10.100",
     "@types/node": "^18.0.0"
   },
