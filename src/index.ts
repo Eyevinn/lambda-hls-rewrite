@@ -1,6 +1,7 @@
 import { ALBHandler, ALBEvent, ALBResult } from "aws-lambda";
 import { HLSMultiVariant, HLSMediaPlaylist } from "@eyevinn/hls-query";
 import { gzip } from "zlib";
+import path from "path";
 
 const generateErrorResponse = ({ code: code, message: message }): ALBResult => {
   let response: ALBResult = {
@@ -9,6 +10,7 @@ const generateErrorResponse = ({ code: code, message: message }): ALBResult => {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Headers": "Content-Type, Origin",
+      'Access-Control-Allow-Private-Network': 'true',
     }
   };
   if (message) {
@@ -76,6 +78,7 @@ const handleMultiVariantRequest = async (event: ALBEvent): Promise<ALBResult> =>
         "Content-Type": "application/x-mpegURL",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Content-Type, Origin",
+        'Access-Control-Allow-Private-Network': 'true',
       },
       body: content
     };
@@ -113,6 +116,7 @@ const handleMediaPlaylistRequest = async (event: ALBEvent): Promise<ALBResult> =
         "Content-Encoding": "gzip",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Content-Type, Origin",
+        'Access-Control-Allow-Private-Network': 'true',
       },
       body: compressed.toString("base64"),
       isBase64Encoded: true,
@@ -132,11 +136,17 @@ const compress = async (input: Buffer): Promise<Buffer> => {
 }
 
 const handleSegmentRedirect = async (event: ALBEvent): Promise<ALBResult> => {
-  const segmentUrl = event.queryStringParameters.o + "/" + event.queryStringParameters.seg;
+  const segmentUrl = new URL(event.queryStringParameters.o);
+  const resolvedPathName = path.resolve(segmentUrl.pathname, event.queryStringParameters.seg);
+  segmentUrl.pathname = resolvedPathName;
+
   return {
     statusCode: 301,
     headers: {
-      Location: segmentUrl,
+      'Location': segmentUrl.toString(),
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Origin, Location',
+      'Access-Control-Allow-Private-Network': 'true',
     }
   }  
 }
@@ -148,6 +158,7 @@ const handleOptionsRequest = async (event: ALBEvent): Promise<ALBResult> => {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Origin',
+      'Access-Control-Allow-Private-Network': 'true',
       'Access-Control-Max-Age': '86400',
     }
   };
